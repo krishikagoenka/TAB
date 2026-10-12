@@ -27,7 +27,7 @@ contract TabGroupWallet is ITabGroupWallet, ReentrancyGuard {
     mapping(uint256 => mapping(address => bool)) internal _isGroupMember;
 
     // groupId => account => net balance (positive = creditor/should receive, negative = debtor/owes)
-    mapping(uint256 => mapping(address => int256)) public override netBalances;
+    mapping(uint256 => mapping(address => int256)) public netBalances;
 
     // expenseId => Expense
     mapping(uint256 => Expense) internal _expenses;
@@ -48,7 +48,7 @@ contract TabGroupWallet is ITabGroupWallet, ReentrancyGuard {
     mapping(bytes32 => bool) internal _isPlanRegistered;
 
     // account => claimable native MON (pull-payment pattern fallback)
-    mapping(address => uint256) public override getClaimableFunds;
+    mapping(address => uint256) internal _claimableFunds;
 
     // --- Modifiers ---
     modifier onlyGroupMember(uint256 groupId) {
@@ -491,12 +491,12 @@ contract TabGroupWallet is ITabGroupWallet, ReentrancyGuard {
      * @notice Allows a creditor to withdraw claimable escrowed native MON if a direct send failed.
      */
     function withdrawClaimable() external override nonReentrant {
-        uint256 amount = getClaimableFunds[msg.sender];
+        uint256 amount = _claimableFunds[msg.sender];
         if (amount == 0) {
             revert NothingToWithdraw();
         }
 
-        getClaimableFunds[msg.sender] = 0;
+        _claimableFunds[msg.sender] = 0;
         emit ClaimableFundsWithdrawn(msg.sender, amount);
 
         (bool success, ) = msg.sender.call{value: amount}("");
@@ -583,6 +583,10 @@ contract TabGroupWallet is ITabGroupWallet, ReentrancyGuard {
         return _isTransferExecuted[planHash][transferIndex];
     }
 
+    function getClaimableFunds(address recipient) external view override returns (uint256) {
+        return _claimableFunds[recipient];
+    }
+
     // --- Internal Helpers ---
 
     function _requireGroupExists(uint256 groupId) internal view {
@@ -627,7 +631,7 @@ contract TabGroupWallet is ITabGroupWallet, ReentrancyGuard {
         (bool success, ) = recipient.call{value: amount}("");
         if (!success) {
             // Escrow funds for pull withdrawal
-            getClaimableFunds[recipient] += amount;
+            _claimableFunds[recipient] += amount;
             emit ClaimableFundsCredited(recipient, amount);
         }
     }

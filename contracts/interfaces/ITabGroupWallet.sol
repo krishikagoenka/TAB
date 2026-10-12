@@ -115,7 +115,7 @@ interface ITabGroupWallet {
         bytes32 indexed planHash,
         uint256 transferIndex,
         address indexed from,
-        address indexed to,
+        address to,
         uint256 amount
     );
 
