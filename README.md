@@ -1,161 +1,324 @@
-# TAB — The Group Wallet That Settles Itself 🧾✨
+# TAB — The Group Wallet That Settles Itself
 
-> **Built for the Monad Ecosystem**  
-> High-throughput, gas-optimized group expense splitting and automated debt simplification protocol.
+**A blockchain-powered group expense wallet built for the Monad ecosystem.**
 
----
+TAB simplifies shared expenses for college friends, roommates, and groups. Whether you're splitting dinner bills, cab fares, books, or event tickets, TAB tracks who owes whom and calculates an optimized settlement plan to minimize unnecessary transfers.
 
-## 1. Project Overview
+## The Problem
 
-**TAB** is an autonomous group wallet and expense-sharing protocol built natively for the **Monad** blockchain. In social trips, hacker houses, shared flats, or DAO working groups, friends and collaborators constantly incur uneven shared expenses. 
+When a group of friends shares expenses, keeping track of payments becomes complicated. People forget who paid, balances become confusing, and settling every individual debt can require multiple transfers.
 
-Traditionally, settling up requires either:
-1. Every person making multiple fragmented peer-to-peer payments ($O(N^2)$ transactions).
-2. Clunky off-chain spreadsheets and manual escrow reconciliation.
+Traditional expense-splitting apps track debts, but TAB aims to take the process further by combining transparent on-chain records with optimized settlements.
 
-TAB solves this on Monad by:
-- Tracking **net balance conservation** in native `MON` units.
-- Eliminating wei-level rounding drift with **deterministic remainder absorption**.
-- Generating **greedy debt-simplification settlement plans** that reduce multi-party settlement down to at most $N - 1$ transfers.
-- Enforcing **approval thresholds** and **replay/double-settlement protection**.
-- Protecting users from denial-of-service with **pull-over-push fallback escrow**.
+## Our Solution
 
----
+TAB provides a shared group expense management system where members can record expenses, approve them, track balances, and settle outstanding debts.
 
-## 2. Architecture & Team Boundaries
+Instead of making everyone pay everyone else, TAB calculates a settlement plan that reduces the number of transfers needed to clear the group's net balances.
 
-The TAB repository is structured with modular separation between the blockchain protocol and frontend client:
+### Key Features
 
+- **Shared Groups:** Create expense groups and manage group members.
+- **Expense Tracking:** Record expenses, identify payers, and specify participants.
+- **Expense Approvals:** Allow group members to approve expenses according to the protocol's rules.
+- **Automatic Balance Calculation:** Track how much each member owes or is owed.
+- **Optimized Settlement:** Calculate who should pay whom and how much, reducing unnecessary transfers.
+- **On-Chain Transparency:** Store supported group operations and settlement records on the blockchain.
+- **Wallet Integration:** Connect a compatible Web3 wallet to interact with the application.
+- **Monad Integration:** Build and test blockchain functionality for the Monad ecosystem.
+
+## How It Works
+
+1. **Create a group:** A user creates a group and registers its members.
+2. **Record expenses:** Members record shared expenses and specify who participated.
+3. **Approve expenses:** Members provide the required approvals.
+4. **Calculate balances:** TAB calculates each member's net balance across the group's expenses.
+5. **Generate a settlement plan:** The settlement algorithm determines the proposed payments.
+6. **Settle debts:** Authorized users execute the settlement through the supported blockchain workflow.
+7. **Verify the result:** Updated balances and transaction records reflect the completed settlement.
+
+### Example
+
+Suppose five friends share expenses during a trip. After accounting for all expenses, the group has the following net balances:
+
+| Friend | Net balance |
+|---|---:|
+| Alice | +₹600 |
+| Bob | +₹400 |
+| Charlie | -₹500 |
+| Dave | -₹300 |
+| Eve | -₹200 |
+
+Positive balances represent money to receive, while negative balances represent money owed.
+
+A possible settlement is:
+
+- Charlie pays Alice ₹500.
+- Dave pays Alice ₹100.
+- Dave pays Bob ₹200.
+- Eve pays Bob ₹200.
+
+This example settles the balances using four transfers. The actual settlement plan depends on the algorithm and the group's balances.
+
+> Note: The example uses rupees for readability. Actual on-chain transactions must use the asset and denomination supported by the deployed contracts.
+
+## Architecture
+
+TAB separates the user interface from blockchain logic.
+
+```text
+                 TAB APPLICATION
+                        |
+          +-------------+-------------+
+          |                           |
+     Frontend                    Blockchain
+          |                           |
+    Wallet Connection          Smart Contracts
+          |                           |
+    Group Dashboard             Group Management
+          |                           |
+    Expense Management          Expense Approvals
+          |                           |
+    Balance Dashboard           Balance Tracking
+          |                           |
+    Settlement Preview          Settlement Logic
+          |                           |
+          +-------------+-------------+
+                        |
+                  Monad Testnet
 ```
+
+### Technology Stack
+
+| Component | Technology |
+|---|---|
+| Smart contracts | Solidity |
+| Contract development | Hardhat |
+| Contract tests | Hardhat and TypeScript |
+| Blockchain interaction | Ethers.js or the configured Web3 library |
+| Frontend | Next.js, React, and TypeScript (planned/integrated as applicable) |
+| Wallet | MetaMask or another compatible wallet |
+| Blockchain network | Monad Testnet |
+| Version control | Git and GitHub |
+
+The final frontend and Web3 libraries should match the dependencies actually installed in the repository.
+
+## Project Structure
+
+```text
 TAB/
-├── contracts/                        # Core Solidity smart contracts (Owned by Person 1)
-│   ├── TabGroupWallet.sol            # Main protocol contract (Groups, Expenses, Settlements)
+├── contracts/
+│   ├── TabGroupWallet.sol
 │   ├── interfaces/
-│   │   └── ITabGroupWallet.sol       # Contract interface, structs, events, errors
-│   ├── libraries/
-│   │   └── SettlementMath.sol        # Pure library: Equal split & greedy debt simplification
-│   └── test/
-│       └── RejectEther.sol           # Mock contract for testing pull-over-push fallback
-├── test/                             # Automated test suite (Owned by Person 1)
-│   ├── TabGroupWallet.test.ts        # Comprehensive protocol integration tests (32 tests)
-│   └── SettlementAlgorithm.test.ts   # Edge cases, cyclic debts & simplification tests (4 tests)
-├── scripts/                          # Deployment & utility scripts (Owned by Person 1)
-│   ├── deploy.ts                     # Deployment script with automatic artifact generation
-│   └── export-abi.ts                 # ABI extraction to shared/ directory
-├── shared/                           # Shared integration contract layer
-│   ├── abi/                          # Generated contract ABIs for frontend consumption
-│   │   ├── TabGroupWallet.json
-│   │   └── ITabGroupWallet.json
-│   ├── deployment.json               # Live network deployment addresses and metadata
-│   └── CONTRACT_INTERFACE.md         # Detailed contract integration specification
-├── .env.example                      # Template for network and secret configuration
-├── .gitignore                        # Git ignore rules protecting keys and build outputs
-├── hardhat.config.ts                 # Hardhat configuration with Monad Testnet support
-├── package.json                      # Protocol dependencies and npm scripts
-├── tsconfig.json                     # TypeScript configuration
-└── README.md                         # Documentation and setup instructions
+│   └── libraries/
+│       └── SettlementMath.sol
+├── scripts/
+│   ├── deploy.ts
+│   └── export-abi.ts
+├── test/
+│   ├── TabGroupWallet.test.ts
+│   └── SettlementAlgorithm.test.ts
+├── shared/
+│   ├── abi/
+│   │   └── TabGroupWallet.json
+│   ├── CONTRACT_INTERFACE.md
+│   └── deployment.json
+├── web/                    # Frontend, when initialized
+├── hardhat.config.ts
+├── package.json
+├── package-lock.json
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
-- **Person 1 (Blockchain Engineer)** owns: `contracts/`, `test/`, `scripts/`, `shared/`, root blockchain configuration.
-- **Person 2 (Frontend Engineer)** owns: Frontend application and UI connecting to `shared/abi/` and `shared/deployment.json`.
+The directory listing describes the intended organization. Keep the actual paths consistent with the files present in the repository.
 
----
-
-## 3. Protocol Mechanics
-
-### A. Balance Convention
-TAB tracks net balances using signed integers (`int256`) in native MON wei units:
-- **Positive Balance (`+`)**: Member is a **Creditor** (is owed money, should receive MON).
-- **Negative Balance (`-`)**: Member is a **Debtor** (owes money, must pay MON).
-- **Zero Balance (`0`)**: Member is completely settled.
-- **Invariant**: In any closed group at all times, $\sum_{m \in M} \text{balance}(m) \equiv 0$.
-
-### B. Deterministic Remainder Splitting
-When an expense amount $A$ is split equally among $N$ participants:
-$$\text{baseShare} = \lfloor A / N \rfloor, \quad \text{remainder} = A \pmod N$$
-The first $\text{remainder}$ participants pay $\text{baseShare} + 1\text{ wei}$, and the rest pay $\text{baseShare}$.
-$$\text{Sum of shares} = \text{remainder} \cdot (\text{baseShare} + 1) + (N - \text{remainder}) \cdot \text{baseShare} \equiv A$$
-Zero wei is lost or generated, preventing rounding drift or insolvency.
-
-### C. Greedy Settlement Algorithm & Limitations
-- **How it works**: The algorithm inspects the group's net balances, identifying all debtors and creditors. It iteratively pairs the current debtor with the current creditor, transferring $\min(|\text{debt}|, \text{credit})$, until all debts are eliminated.
-- **Complexity reduction**: Replaces up to $N(N-1)/2$ pairwise bilateral transfers with at most $N - 1$ transfers.
-- **Algorithm limitations**: While greedy matching drastically cuts transaction volume and gas, finding the *absolute theoretical minimum* number of transfers across arbitrary subsets is equivalent to the **Subset Sum / Partition Problem**, an NP-hard problem. Greedy matching provides optimal or near-optimal results for practical group sizes without requiring exponential off-chain computation.
-
----
-
-## 4. Quickstart & Setup Commands
+## Getting Started
 
 ### Prerequisites
-- Node.js version `>= 18.0.0`
-- npm version `>= 9.0.0`
 
-### Installation
-Clone the repository and install dependencies:
+Install the following:
+
+- Node.js and npm.
+- Git.
+- A compatible Web3 wallet, such as MetaMask.
+- A Monad testnet RPC connection for blockchain deployment and interaction.
+
+### 1. Clone the repository
+
+```bash
+git clone <YOUR_GITHUB_REPOSITORY_URL>
+cd TAB
+```
+
+Replace the placeholder with the actual GitHub repository URL.
+
+### 2. Install dependencies
+
 ```bash
 npm install
 ```
 
-### Compile Smart Contracts
-Compile Solidity contracts with solc `0.8.24` and generate TypeChain typings:
-```bash
-npm run compile
-```
+### 3. Configure environment variables
 
-### Run Automated Tests
-Execute the full test suite (36 tests covering group management, expense splits, approvals, settlements, and edge cases):
-```bash
-npm test
-```
+Copy the example environment file:
 
-### Export Contract ABIs
-Extract clean ABIs to the `shared/abi/` directory for frontend integration:
-```bash
-npm run export-abi
-```
-
----
-
-## 5. Deployment
-
-### Monad Testnet Configuration
-Official Monad Testnet parameters configured in `hardhat.config.ts`:
-- **Network Name**: `monadTestnet`
-- **Chain ID**: `10143`
-- **RPC URL**: `https://testnet-rpc.monad.xyz`
-- **Currency**: `MON`
-- **Block Explorer**: `https://testnet.monadexplorer.com`
-
-### Setting up Environment Variables
-Create a local `.env` file from the template:
 ```bash
 cp .env.example .env
 ```
-Populate `.env` with your deployment private key:
-```env
+
+On Windows, you can copy `.env.example` to `.env` using File Explorer or PowerShell.
+
+Fill in the values required by the project's configuration. For example:
+
+```dotenv
 MONAD_TESTNET_RPC_URL=https://testnet-rpc.monad.xyz
-PRIVATE_KEY=your_monad_testnet_private_key_here
+PRIVATE_KEY=your_testnet_deployer_private_key
+MONAD_EXPLORER_API_KEY=
+LOCALHOST_RPC_URL=http://127.0.0.1:8545
+REPORT_GAS=false
 ```
-> ⚠️ **SECURITY WARNING**: Never commit `.env` or real private keys. `.env` is ignored in `.gitignore`.
 
-### Deploy Locally (Hardhat Network)
+Use the exact variable names expected by `hardhat.config.ts`.
+
+**Security:** Never commit `.env`, private keys, wallet seed phrases, or other secrets. Use a dedicated development wallet funded only with testnet assets.
+
+### 4. Compile the smart contracts
+
 ```bash
-npm run deploy:local
+npx hardhat compile
 ```
 
-### Deploy to Monad Testnet
-To deploy directly to the live Monad Testnet:
+This checks that the Solidity contracts compile successfully.
+
+### 5. Run the tests
+
 ```bash
-npm run deploy:monad-testnet
+npx hardhat test
 ```
 
-Upon deployment, the script automatically:
-1. Deploys `TabGroupWallet`.
-2. Records the deployed address, transaction hash, and timestamp in `shared/deployment.json`.
-3. Synchronizes the ABI into `shared/abi/TabGroupWallet.json`.
+Tests should cover group creation, membership permissions, expense recording, approvals, balance calculations, settlement generation, and settlement execution.
+
+A successful compilation does not guarantee that all tests pass. Check the test output before proceeding.
+
+## Deployment
+
+TAB is intended to run on Monad Testnet during development and demonstration.
+
+Before deploying:
+
+1. Confirm that the Monad testnet configuration in `hardhat.config.ts` is correct.
+2. Configure the RPC URL and deployment wallet in `.env`.
+3. Ensure the deployment wallet has sufficient testnet MON for gas.
+4. Compile the contracts and run the tests.
+5. Execute the deployment script using the network name defined in `hardhat.config.ts`.
+
+For example, if the configured network is named `monadTestnet`:
+
+```bash
+npx hardhat run scripts/deploy.ts --network monadTestnet
+```
+
+Use the actual configured network name if it differs.
+
+After deployment:
+
+- Record the actual deployed contract address.
+- Export the ABI if required:
+
+```bash
+npx hardhat run scripts/export-abi.ts
+```
+
+- Update the deployment configuration consumed by the frontend.
+- Verify that the frontend uses the correct network, contract address, and ABI.
+
+Deployment is complete only after the contract has been successfully deployed and the resulting address has been verified.
+
+## Settlement Algorithm
+
+The settlement algorithm operates on the net balances of group members.
+
+1. Calculate each member's net balance.
+2. Separate members who need to pay from members who need to receive money.
+3. Match debtors with creditors.
+4. Generate transfers that reduce the outstanding balances.
+5. Validate and execute the resulting settlement according to the contract's rules.
+
+The goal is to reduce the number of transfers compared with settling every debt separately.
+
+The precise minimum-transfer problem can be computationally expensive for larger groups. A greedy matching algorithm can produce a valid, efficient settlement, but it does not guarantee the globally minimum number of transfers in every case.
+
+## Testing Strategy
+
+TAB's testing strategy should include:
+
+- Group creation and member registration.
+- Access control and authorization.
+- Expense creation and participant validation.
+- Approval requirements and duplicate approval prevention.
+- Correct balance updates across multiple expenses.
+- Settlement calculation and transfer validation.
+- Double-settlement prevention.
+- Invalid inputs and rounding edge cases.
+- Failed transactions and relevant security scenarios.
+
+Run the test suite before committing changes or deploying new contract versions.
+
+## Development Workflow
+
+For a team working on TAB:
+
+- **Blockchain engineer:** Owns Solidity contracts, settlement logic, tests, deployment scripts, and ABI generation.
+- **Frontend engineer:** Owns the UI, wallet connection, group dashboard, expense forms, and blockchain integration.
+
+Both contributors should coordinate changes to shared interface documentation, ABI files, package configuration, and deployment configuration.
+
+Use descriptive conventional commit messages, for example:
+
+```bash
+git add .
+git commit -m "feat(contracts): implement group expense tracking"
+```
+
+Follow the team's agreed branch and pull-request workflow. Do not commit generated secrets or overwrite another contributor's changes.
+
+## Current Project Status
+
+TAB is being developed as a hackathon MVP.
+
+The intended milestones are:
+
+- [x] Initial blockchain project configuration
+- [x] Core group-wallet and settlement contract implementation
+- [x] Initial contract tests and deployment tooling
+- [x] Confirm all compilation and test results
+- [ ] Deploy and verify contracts on Monad Testnet
+- [ ] Complete frontend and wallet integration
+- [ ] Test the end-to-end five-friend demonstration
+
+Update the checklist as each milestone is verified. A checked implementation milestone does not, by itself, establish that the feature has been deployed or tested successfully.
+
+## Future Improvements
+
+Potential extensions include:
+
+- Custom expense-splitting ratios.
+- Multiple supported payment assets.
+- Improved settlement optimization.
+- Richer expense history and notifications.
+- Group invitations and recurring expenses.
+- Additional security reviews and automated testing.
+
+## Contributing
+
+Contributions are welcome. Before proposing changes, coordinate with the team, follow the repository's coding conventions, add tests for new functionality, and document any changes to the contract interface.
+
+## License
+
+Add the license selected by the project maintainers before distributing the project publicly.
 
 ---
 
-## 6. Shared Contract Interface
-For complete function signatures, event definitions, error codes, and frontend integration examples, see:
-👉 [**`shared/CONTRACT_INTERFACE.md`**](file:///c:/Users/me225/OneDrive/Desktop/TAB/shared/CONTRACT_INTERFACE.md)
+**TAB — Spend together. Track transparently. Settle smarter.**
