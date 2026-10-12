@@ -1,5 +1,4 @@
-import { createConfig, http } from 'wagmi';
-import { injected } from 'wagmi/connectors';
+import { createConfig, http, injected } from 'wagmi';
 import { defineChain } from 'viem';
 import { CHAIN_ID, CHAIN_RPC_URL } from '@/lib/contracts';
 
