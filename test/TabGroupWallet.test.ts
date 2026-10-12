@@ -280,6 +280,7 @@ describe("TAB Protocol — TabGroupWallet", function () {
     });
 
     it("should prevent duplicate approval by the same member", async function () {
+      // Group with 3 participants so 3 approvals required: Alice (creator/payer) + Bob + Charlie
       await tab.connect(alice).createGroup("House", [bob.address, charlie.address, dave.address], 3);
 
       await tab.connect(alice).recordExpense(
@@ -287,33 +288,35 @@ describe("TAB Protocol — TabGroupWallet", function () {
         alice.address,
         ethers.parseEther("1.0"),
         "Groceries",
-        [bob.address, charlie.address]
+        [bob.address, charlie.address, dave.address]
       );
 
-      // Alice already approved upon recording
+      // Alice already approved upon recording -> reverts AlreadyApproved while pending
       await expect(
         tab.connect(alice).approveExpense(2, 1)
       ).to.be.revertedWithCustomError(tab, "AlreadyApproved");
 
-      // Bob approves once
+      // Bob approves once (approvals count becomes 2 out of 3, still pending)
       await tab.connect(bob).approveExpense(2, 1);
 
-      // Bob cannot approve again
+      // Bob cannot approve again -> reverts AlreadyApproved while pending
       await expect(
         tab.connect(bob).approveExpense(2, 1)
       ).to.be.revertedWithCustomError(tab, "AlreadyApproved");
     });
 
     it("should prevent approving an already processed expense", async function () {
+      // Group 1 has requiredApprovals = 2
+      // 2 participants: Bob and Charlie
       await tab.connect(alice).recordExpense(
         1,
         alice.address,
         ethers.parseEther("1.0"),
         "Snacks",
-        [bob.address]
+        [bob.address, charlie.address]
       );
 
-      // Bob approves => reaches required 2 approvals (Alice + Bob) => Processed
+      // Bob approves => reaches required 2 approvals (Alice auto-approved + Bob) => Processed
       await tab.connect(bob).approveExpense(1, 1);
 
       // Charlie attempts to approve an already processed expense
