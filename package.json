@@ -1,15 +1,21 @@
 {
-  "name": "tab-protocol",
+  "name": "tab-monorepo",
   "version": "1.0.0",
+  "private": true,
   "description": "TAB — the group wallet that settles itself (Monad ecosystem)",
-  "main": "index.js",
+  "workspaces": [
+    "web"
+  ],
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
     "coverage": "hardhat coverage",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:monad-testnet": "hardhat run scripts/deploy.ts --network monadTestnet",
-    "export-abi": "hardhat run scripts/export-abi.ts"
+    "export-abi": "hardhat run scripts/export-abi.ts",
+    "dev": "npm run dev --workspace=web",
+    "build": "npm run build --workspace=web",
+    "lint": "npm run lint --workspace=web"
   },
   "keywords": [
     "monad",
@@ -20,6 +26,7 @@
     "solidity",
     "hardhat"
   ],
+
   "author": "Person 1 (Blockchain Engineer)",
   "license": "MIT",
   "devDependencies": {
